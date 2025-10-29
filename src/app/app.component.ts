@@ -36,7 +36,7 @@ export class AppComponent {
     { label: 'Yale University', value: 'Yale University' },
     { label: 'Princeton University', value: 'Princeton University' }
   ];
-
+  domains = ['@edu.com', '@university.edu'];
   constructor(private fb: FormBuilder) {
     this.registrationForm = this.fb.group({
       firstName: ['', [Validators.required, Validators.minLength(2)]],
@@ -45,18 +45,33 @@ export class AppComponent {
       university: ['', [Validators.required]]
     });
   }
-
+  
   onSubmit() {
     if (this.registrationForm.valid) {
-      this.users.push(this.registrationForm.value);
-      console.log('User added:', this.registrationForm.value);
-      console.log('All users:', this.users);
-      this.registrationForm.reset();
-    } else {
+      if(this.domains.findIndex((el) => this.registrationForm.value.email.includes(el)) != -1) {
+        if(this.users.findIndex((el) => this.registrationForm.value.email == el.email) == -1) {
+          this.users.push(this.registrationForm.value);
+          console.log('User added:', this.registrationForm.value);
+          console.log('All users:', this.users);
+          this.registrationForm.reset();
+        } else {
+          this.registrationForm.get('email')?.setErrors({ duplicate: true })
+        }
+      } else {
+        this.registrationForm.get('email')?.setErrors({ domain: true })
+      }
+    }else {
       this.registrationForm.markAllAsTouched();
     }
   }
 
+  removeUser(delEmail: string) {
+    if(confirm('Are you sure you want to delete?')){
+      var index = this.users.findIndex(u =>u.email ===delEmail);
+      this.users.splice(index,1);
+    }
+  }
+  
   getFieldError(fieldName: string): string {
     const field = this.registrationForm.get(fieldName);
     console.log(field?.errors)
@@ -69,6 +84,12 @@ export class AppComponent {
       }
       if (field.errors?.['email']) {
         return 'Please enter a valid email';
+      }
+      if (field.errors?.['domain']) {
+        return 'The domain is not allowed!';
+      }
+      if (field.errors?.['duplicate']) {
+        return 'This email already exists!';
       }
     }
     return '';
